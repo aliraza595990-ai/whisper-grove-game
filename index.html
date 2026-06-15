@@ -1,0 +1,1235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Whisper Grove 🌿</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Fredoka+One&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  :root {
+    --mint: #7EC8A4;
+    --soft-green: #A8D8A8;
+    --peach: #FFB347;
+    --lavender: #C3B1E1;
+    --cream: #FFF8E7;
+    --dark-green: #2D6A4F;
+    --pink: #FFB6C1;
+    --gold: #FFD700;
+    --brown: #8B6914;
+  }
+
+  body {
+    font-family: 'Nunito', sans-serif;
+    background: linear-gradient(135deg, #1a472a 0%, #2d6a4f 30%, #40916c 60%, #74c69d 100%);
+    min-height: 100vh;
+    overflow: hidden;
+    touch-action: none;
+  }
+
+  /* FLOATING PARTICLES */
+  .particle {
+    position: fixed;
+    pointer-events: none;
+    font-size: 20px;
+    animation: floatUp 6s infinite;
+    opacity: 0;
+    z-index: 0;
+  }
+  @keyframes floatUp {
+    0% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
+    10% { opacity: 1; }
+    90% { opacity: 1; }
+    100% { transform: translateY(-100px) rotate(360deg); opacity: 0; }
+  }
+
+  /* MAIN CONTAINER */
+  #app {
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* SCREENS */
+  .screen { display: none; width: 100%; height: 100%; flex-direction: column; }
+  .screen.active { display: flex; }
+
+  /* ===== SPLASH SCREEN ===== */
+  #splash {
+    background: radial-gradient(ellipse at center, #1a472a 0%, #0d2818 100%);
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .splash-bg {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 600'%3E%3Cellipse cx='400' cy='400' rx='300' ry='200' fill='%2340916c' opacity='0.3'/%3E%3Ccircle cx='150' cy='500' r='80' fill='%2352b788' opacity='0.2'/%3E%3Ccircle cx='650' cy='450' r='100' fill='%2374c69d' opacity='0.2'/%3E%3C/svg%3E") no-repeat center;
+    background-size: cover;
+  }
+  .splash-content {
+    text-align: center;
+    z-index: 2;
+    animation: splashIn 1s ease-out;
+  }
+  @keyframes splashIn {
+    from { opacity: 0; transform: scale(0.5) translateY(50px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+  }
+  .game-logo {
+    font-size: 80px;
+    animation: logoBounce 2s infinite;
+    display: block;
+    margin-bottom: 10px;
+    filter: drop-shadow(0 0 20px rgba(255,215,0,0.8));
+  }
+  @keyframes logoBounce {
+    0%, 100% { transform: translateY(0) scale(1); }
+    50% { transform: translateY(-15px) scale(1.05); }
+  }
+  .game-title {
+    font-family: 'Fredoka One', cursive;
+    font-size: 52px;
+    color: #FFD700;
+    text-shadow: 0 0 30px rgba(255,215,0,0.6), 3px 3px 0 #8B6914;
+    letter-spacing: 3px;
+    margin-bottom: 8px;
+  }
+  .game-subtitle {
+    font-size: 18px;
+    color: #A8D8A8;
+    margin-bottom: 40px;
+    font-weight: 600;
+    letter-spacing: 2px;
+  }
+  .play-btn {
+    background: linear-gradient(135deg, #FFD700, #FF8C00);
+    border: none;
+    border-radius: 50px;
+    padding: 18px 60px;
+    font-family: 'Fredoka One', cursive;
+    font-size: 28px;
+    color: #1a472a;
+    cursor: pointer;
+    box-shadow: 0 8px 25px rgba(255,165,0,0.5), inset 0 2px 0 rgba(255,255,255,0.3);
+    transition: all 0.2s;
+    animation: pulseBtn 2s infinite;
+    letter-spacing: 2px;
+  }
+  @keyframes pulseBtn {
+    0%, 100% { box-shadow: 0 8px 25px rgba(255,165,0,0.5); transform: scale(1); }
+    50% { box-shadow: 0 12px 35px rgba(255,165,0,0.8); transform: scale(1.03); }
+  }
+  .play-btn:active { transform: scale(0.95); }
+  .version-text { color: #74c69d; font-size: 12px; margin-top: 20px; opacity: 0.7; }
+
+  /* ===== GAME SCREEN ===== */
+  #game {
+    background: linear-gradient(180deg, #87CEEB 0%, #98D8C8 30%, #7EC8A4 60%, #52b788 100%);
+  }
+
+  /* TOP BAR */
+  .top-bar {
+    background: linear-gradient(135deg, rgba(45,106,79,0.95), rgba(27,67,50,0.95));
+    backdrop-filter: blur(10px);
+    padding: 8px 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid rgba(255,215,0,0.3);
+    flex-shrink: 0;
+  }
+  .resource {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    background: rgba(0,0,0,0.2);
+    padding: 6px 12px;
+    border-radius: 20px;
+    border: 1px solid rgba(255,255,255,0.1);
+  }
+  .resource-icon { font-size: 18px; }
+  .resource-value {
+    font-family: 'Fredoka One', cursive;
+    font-size: 16px;
+    color: #FFD700;
+  }
+  .resource-label { font-size: 10px; color: #A8D8A8; }
+
+  /* MERGE BOARD */
+  .board-container {
+    flex: 1;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .board-title {
+    font-family: 'Fredoka One', cursive;
+    color: white;
+    text-align: center;
+    font-size: 18px;
+    text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+    margin-bottom: 8px;
+  }
+  .merge-board {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    grid-template-rows: repeat(6, 1fr);
+    gap: 6px;
+    flex: 1;
+    background: rgba(255,255,255,0.15);
+    backdrop-filter: blur(5px);
+    border-radius: 20px;
+    padding: 10px;
+    border: 2px solid rgba(255,255,255,0.3);
+    box-shadow: inset 0 0 30px rgba(0,0,0,0.1);
+  }
+  .cell {
+    background: rgba(255,255,255,0.2);
+    border-radius: 12px;
+    border: 2px solid rgba(255,255,255,0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    min-height: 0;
+  }
+  .cell:hover { background: rgba(255,255,255,0.35); transform: scale(1.05); }
+  .cell.selected {
+    background: rgba(255,215,0,0.4);
+    border-color: #FFD700;
+    box-shadow: 0 0 15px rgba(255,215,0,0.6);
+    transform: scale(1.08);
+  }
+  .cell.merge-target {
+    background: rgba(0,255,100,0.3);
+    border-color: #00ff64;
+    animation: mergeGlow 0.5s infinite alternate;
+  }
+  @keyframes mergeGlow {
+    from { box-shadow: 0 0 10px rgba(0,255,100,0.5); }
+    to { box-shadow: 0 0 25px rgba(0,255,100,0.9); }
+  }
+  .item {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3px;
+  }
+  .item-emoji {
+    font-size: clamp(20px, 4vw, 32px);
+    line-height: 1;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+    transition: transform 0.2s;
+  }
+  .cell:active .item-emoji { transform: scale(0.9); }
+  .item-level {
+    font-size: 9px;
+    font-weight: 800;
+    color: white;
+    background: rgba(0,0,0,0.5);
+    border-radius: 8px;
+    padding: 1px 4px;
+    margin-top: 2px;
+    white-space: nowrap;
+  }
+  .item-rate {
+    font-size: 8px;
+    color: #FFD700;
+    font-weight: 700;
+  }
+
+  /* MERGE ANIMATION */
+  @keyframes mergeAnim {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.5); filter: brightness(2); }
+    100% { transform: scale(1); }
+  }
+  .merging { animation: mergeAnim 0.5s ease-out; }
+
+  /* SPARKLE */
+  .sparkle {
+    position: absolute;
+    pointer-events: none;
+    font-size: 20px;
+    animation: sparkleAnim 0.8s ease-out forwards;
+    z-index: 100;
+  }
+  @keyframes sparkleAnim {
+    0% { opacity: 1; transform: translateY(0) scale(1); }
+    100% { opacity: 0; transform: translateY(-60px) scale(0); }
+  }
+
+  /* BOTTOM BAR */
+  .bottom-bar {
+    background: linear-gradient(135deg, rgba(27,67,50,0.95), rgba(45,106,79,0.95));
+    border-top: 2px solid rgba(255,215,0,0.3);
+    padding: 8px 10px;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    flex-shrink: 0;
+  }
+  .action-btn {
+    background: linear-gradient(135deg, #52b788, #40916c);
+    border: 2px solid rgba(255,255,255,0.2);
+    border-radius: 15px;
+    padding: 8px 14px;
+    color: white;
+    font-family: 'Fredoka One', cursive;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    transition: all 0.2s;
+    min-width: 70px;
+  }
+  .action-btn:active { transform: scale(0.9); }
+  .action-btn .btn-icon { font-size: 22px; }
+  .action-btn.gold-btn {
+    background: linear-gradient(135deg, #FFD700, #FFA500);
+    color: #1a472a;
+  }
+  .action-btn.shop-btn {
+    background: linear-gradient(135deg, #C3B1E1, #9B8BC7);
+  }
+
+  /* INFO BAR */
+  .info-bar {
+    background: rgba(0,0,0,0.15);
+    padding: 5px 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+  }
+  .level-info {
+    font-family: 'Fredoka One', cursive;
+    color: #FFD700;
+    font-size: 14px;
+  }
+  .offline-bonus {
+    font-size: 11px;
+    color: #A8D8A8;
+    background: rgba(0,0,0,0.2);
+    padding: 3px 8px;
+    border-radius: 10px;
+  }
+  .chain-info { font-size: 11px; color: white; }
+
+  /* ===== MODAL ===== */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.6);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+    backdrop-filter: blur(5px);
+  }
+  .modal-overlay.show { display: flex; }
+  .modal {
+    background: linear-gradient(135deg, #1a472a, #2d6a4f);
+    border: 3px solid #FFD700;
+    border-radius: 25px;
+    padding: 25px;
+    width: 90%;
+    max-width: 380px;
+    text-align: center;
+    animation: modalIn 0.3s ease-out;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  }
+  @keyframes modalIn {
+    from { transform: scale(0.5) translateY(50px); opacity: 0; }
+    to { transform: scale(1) translateY(0); opacity: 1; }
+  }
+  .modal h2 {
+    font-family: 'Fredoka One', cursive;
+    color: #FFD700;
+    font-size: 28px;
+    margin-bottom: 15px;
+  }
+  .modal-body { color: #A8D8A8; font-size: 15px; margin-bottom: 20px; line-height: 1.6; }
+  .modal-btn {
+    background: linear-gradient(135deg, #FFD700, #FFA500);
+    border: none;
+    border-radius: 20px;
+    padding: 12px 30px;
+    font-family: 'Fredoka One', cursive;
+    font-size: 18px;
+    color: #1a472a;
+    cursor: pointer;
+    width: 100%;
+    margin-top: 8px;
+    transition: transform 0.2s;
+  }
+  .modal-btn:active { transform: scale(0.95); }
+  .modal-btn.secondary {
+    background: rgba(255,255,255,0.1);
+    color: white;
+    border: 1px solid rgba(255,255,255,0.2);
+  }
+
+  /* DAILY REWARD */
+  .reward-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin: 15px 0;
+  }
+  .reward-day {
+    background: rgba(255,255,255,0.1);
+    border-radius: 12px;
+    padding: 10px 5px;
+    border: 2px solid rgba(255,255,255,0.2);
+    font-size: 12px;
+    color: white;
+  }
+  .reward-day.today {
+    background: rgba(255,215,0,0.3);
+    border-color: #FFD700;
+    animation: pulseBtn 1.5s infinite;
+  }
+  .reward-day.claimed { opacity: 0.5; }
+  .reward-day .r-icon { font-size: 24px; display: block; }
+  .reward-day .r-label { font-size: 10px; color: #A8D8A8; }
+
+  /* SHOP */
+  .shop-items {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin: 15px 0;
+    max-height: 300px;
+    overflow-y: auto;
+  }
+  .shop-item {
+    background: rgba(255,255,255,0.1);
+    border-radius: 15px;
+    padding: 12px;
+    border: 2px solid rgba(255,255,255,0.2);
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .shop-item:active { transform: scale(0.95); }
+  .shop-item .si-icon { font-size: 32px; }
+  .shop-item .si-name { font-size: 11px; color: white; font-weight: 700; margin: 4px 0; }
+  .shop-item .si-price { font-size: 13px; color: #FFD700; font-weight: 800; }
+
+  /* TOAST */
+  .toast {
+    position: fixed;
+    top: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(27,67,50,0.95);
+    border: 2px solid #FFD700;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 700;
+    z-index: 2000;
+    animation: toastAnim 2s ease-out forwards;
+    white-space: nowrap;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+  }
+  @keyframes toastAnim {
+    0% { opacity: 0; transform: translateX(-50%) translateY(-20px); }
+    15% { opacity: 1; transform: translateX(-50%) translateY(0); }
+    70% { opacity: 1; transform: translateX(-50%) translateY(0); }
+    100% { opacity: 0; transform: translateX(-50%) translateY(-20px); }
+  }
+
+  /* QUEST BAR */
+  .quest-bar {
+    background: rgba(195,177,225,0.2);
+    border: 1px solid rgba(195,177,225,0.4);
+    border-radius: 12px;
+    padding: 5px 10px;
+    margin: 0 10px 6px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+  .quest-icon { font-size: 18px; }
+  .quest-text { font-size: 11px; color: white; flex: 1; }
+  .quest-progress {
+    font-size: 11px;
+    font-weight: 800;
+    color: #FFD700;
+  }
+
+  /* IDLE COLLECT BUTTON */
+  .collect-btn {
+    position: fixed;
+    bottom: 80px;
+    right: 15px;
+    background: linear-gradient(135deg, #FFD700, #FF8C00);
+    border: 3px solid white;
+    border-radius: 50%;
+    width: 65px;
+    height: 65px;
+    font-size: 28px;
+    cursor: pointer;
+    box-shadow: 0 5px 20px rgba(255,165,0,0.6);
+    animation: bounceCollect 1.5s infinite;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 500;
+    flex-direction: column;
+  }
+  .collect-btn.show { display: flex; }
+  @keyframes bounceCollect {
+    0%, 100% { transform: translateY(0) scale(1); }
+    50% { transform: translateY(-8px) scale(1.05); }
+  }
+  .collect-btn small {
+    font-size: 9px;
+    color: #1a472a;
+    font-weight: 800;
+    line-height: 1;
+    font-family: 'Nunito', sans-serif;
+  }
+
+  /* LEVEL UP BANNER */
+  .level-banner {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: linear-gradient(135deg, #FFD700, #FF8C00);
+    border-radius: 20px;
+    padding: 20px 40px;
+    text-align: center;
+    z-index: 3000;
+    display: none;
+    box-shadow: 0 10px 40px rgba(255,165,0,0.7);
+  }
+  .level-banner h2 {
+    font-family: 'Fredoka One', cursive;
+    font-size: 36px;
+    color: #1a472a;
+  }
+  .level-banner p { color: #2d6a4f; font-weight: 700; }
+  @keyframes bannerPop {
+    0% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
+    50% { transform: translate(-50%, -50%) scale(1.1); }
+    100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  }
+  .level-banner.show {
+    display: block;
+    animation: bannerPop 0.5s ease-out;
+  }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: rgba(255,255,255,0.1); border-radius: 2px; }
+  ::-webkit-scrollbar-thumb { background: rgba(255,215,0,0.5); border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<!-- FLOATING PARTICLES -->
+<div id="particles"></div>
+
+<!-- APP -->
+<div id="app">
+
+  <!-- SPLASH SCREEN -->
+  <div id="splash" class="screen active">
+    <div class="splash-bg"></div>
+    <div class="splash-content">
+      <span class="game-logo">🌿</span>
+      <h1 class="game-title">WHISPER GROVE</h1>
+      <p class="game-subtitle">✨ جادوئی جنگل کی دنیا ✨</p>
+      <button class="play-btn" onclick="startGame()">🎮 کھیلیں!</button>
+      <p class="version-text">Version 1.0 • By Ali Raza • 2026</p>
+    </div>
+  </div>
+
+  <!-- GAME SCREEN -->
+  <div id="game" class="screen">
+    <!-- TOP BAR -->
+    <div class="top-bar">
+      <div class="resource">
+        <span class="resource-icon">🍃</span>
+        <div>
+          <div class="resource-value" id="leaves-val">0</div>
+          <div class="resource-label">پتے</div>
+        </div>
+      </div>
+      <div class="resource">
+        <span class="resource-icon">⭐</span>
+        <div>
+          <div class="resource-value" id="stars-val">0</div>
+          <div class="resource-label">ستارے</div>
+        </div>
+      </div>
+      <div class="resource">
+        <span class="resource-icon">🪙</span>
+        <div>
+          <div class="resource-value" id="coins-val">100</div>
+          <div class="resource-label">سکے</div>
+        </div>
+      </div>
+      <div class="resource">
+        <span class="resource-icon">💎</span>
+        <div>
+          <div class="resource-value" id="gems-val">5</div>
+          <div class="resource-label">جواہر</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- INFO BAR -->
+    <div class="info-bar">
+      <div class="level-info">🌟 Level <span id="player-level">1</span></div>
+      <div class="offline-bonus" id="offline-info">⏰ Idle کما رہے ہیں!</div>
+      <div class="chain-info">🔀 <span id="merge-count">0</span> Merges</div>
+    </div>
+
+    <!-- QUEST BAR -->
+    <div class="quest-bar">
+      <span class="quest-icon">📋</span>
+      <span class="quest-text" id="quest-text">پہلا Merge کریں!</span>
+      <span class="quest-progress" id="quest-progress">0/1</span>
+    </div>
+
+    <!-- MERGE BOARD -->
+    <div class="board-container">
+      <div class="board-title">🌿 Whisper Grove — Merge Board 🌿</div>
+      <div class="merge-board" id="merge-board"></div>
+    </div>
+
+    <!-- BOTTOM BAR -->
+    <div class="bottom-bar">
+      <button class="action-btn" onclick="openDaily()">
+        <span class="btn-icon">🎁</span>
+        <span>روزانہ</span>
+      </button>
+      <button class="action-btn gold-btn" onclick="addSeed()">
+        <span class="btn-icon">🌱</span>
+        <span>بیج لو</span>
+      </button>
+      <button class="action-btn" onclick="collectIdle()">
+        <span class="btn-icon">⚡</span>
+        <span>اکٹھا</span>
+      </button>
+      <button class="action-btn shop-btn" onclick="openShop()">
+        <span class="btn-icon">🛒</span>
+        <span>دکان</span>
+      </button>
+      <button class="action-btn" onclick="openQuests()">
+        <span class="btn-icon">🏆</span>
+        <span>مہمات</span>
+      </button>
+    </div>
+  </div>
+
+</div>
+
+<!-- COLLECT BUTTON -->
+<div class="collect-btn" id="collect-btn" onclick="collectIdle()">
+  💰
+  <small id="collect-amount">+0</small>
+</div>
+
+<!-- LEVEL BANNER -->
+<div class="level-banner" id="level-banner">
+  <h2>🎉 Level Up!</h2>
+  <p id="banner-text">Level 2 حاصل کیا!</p>
+</div>
+
+<!-- DAILY MODAL -->
+<div class="modal-overlay" id="daily-modal">
+  <div class="modal">
+    <h2>🎁 روزانہ انعام!</h2>
+    <div class="reward-grid">
+      <div class="reward-day claimed"><span class="r-icon">🪙</span><span>50</span><span class="r-label">Day 1</span></div>
+      <div class="reward-day today"><span class="r-icon">⭐</span><span>5💎</span><span class="r-label">Day 2</span></div>
+      <div class="reward-day"><span class="r-icon">🌱</span><span>Magic</span><span class="r-label">Day 3</span></div>
+      <div class="reward-day"><span class="r-icon">🦊</span><span>Pet</span><span class="r-label">Day 4</span></div>
+      <div class="reward-day"><span class="r-icon">💎</span><span>10</span><span class="r-label">Day 5</span></div>
+      <div class="reward-day"><span class="r-icon">🎀</span><span>Deco</span><span class="r-label">Day 6</span></div>
+      <div class="reward-day"><span class="r-icon">🎁</span><span>Box</span><span class="r-label">Day 7</span></div>
+      <div class="reward-day"><span class="r-icon">🌟</span><span>500🪙</span><span class="r-label">Day 8</span></div>
+    </div>
+    <button class="modal-btn" onclick="claimDaily()">✅ آج کا انعام لو!</button>
+    <button class="modal-btn secondary" onclick="closeModal('daily-modal')">بند کریں</button>
+  </div>
+</div>
+
+<!-- SHOP MODAL -->
+<div class="modal-overlay" id="shop-modal">
+  <div class="modal">
+    <h2>🛒 جادوئی دکان</h2>
+    <div class="shop-items">
+      <div class="shop-item" onclick="buyItem('seed', 10)">
+        <div class="si-icon">🌱</div>
+        <div class="si-name">جادوئی بیج</div>
+        <div class="si-price">10 🪙</div>
+      </div>
+      <div class="shop-item" onclick="buyItem('flower', 50)">
+        <div class="si-icon">🌸</div>
+        <div class="si-name">جادوئی پھول</div>
+        <div class="si-price">50 🪙</div>
+      </div>
+      <div class="shop-item" onclick="buyItem('fox', 100)">
+        <div class="si-icon">🦊</div>
+        <div class="si-name">بیبی لومڑی</div>
+        <div class="si-price">100 🪙</div>
+      </div>
+      <div class="shop-item" onclick="buyItem('hut', 80)">
+        <div class="si-icon">🏠</div>
+        <div class="si-name">چھوٹا گھر</div>
+        <div class="si-price">80 🪙</div>
+      </div>
+      <div class="shop-item" onclick="buyItem('mushroom', 30)">
+        <div class="si-icon">🍄</div>
+        <div class="si-name">جادوئی مشروم</div>
+        <div class="si-price">30 🪙</div>
+      </div>
+      <div class="shop-item" onclick="buyItem('energy', 1)">
+        <div class="si-icon">⚡</div>
+        <div class="si-name">انرجی</div>
+        <div class="si-price">1 💎</div>
+      </div>
+    </div>
+    <button class="modal-btn secondary" onclick="closeModal('shop-modal')">بند کریں</button>
+  </div>
+</div>
+
+<!-- QUEST MODAL -->
+<div class="modal-overlay" id="quest-modal">
+  <div class="modal">
+    <h2>🏆 مہمات و کامیابیاں</h2>
+    <div class="modal-body" id="quest-list"></div>
+    <button class="modal-btn secondary" onclick="closeModal('quest-modal')">بند کریں</button>
+  </div>
+</div>
+
+<!-- MERGE RESULT MODAL -->
+<div class="modal-overlay" id="merge-modal">
+  <div class="modal">
+    <h2 id="merge-title">🎉 Merge کامیاب!</h2>
+    <div class="modal-body" id="merge-body"></div>
+    <button class="modal-btn" onclick="closeModal('merge-modal')">شاندار! ✨</button>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// GAME DATA
+// ============================================================
+const CHAINS = {
+  plants: [
+    { emoji: '🌱', name: 'چھوٹا بیج', rate: 1, res: 'leaves' },
+    { emoji: '🌿', name: 'پودا', rate: 3, res: 'leaves' },
+    { emoji: '🌾', name: 'سبزہ', rate: 6, res: 'leaves' },
+    { emoji: '🌺', name: 'پھول', rate: 10, res: 'leaves' },
+    { emoji: '🌸', name: 'گلاب', rate: 20, res: 'leaves' },
+    { emoji: '🌼', name: 'چمکتا پھول', rate: 35, res: 'leaves' },
+    { emoji: '💐', name: 'جادوئی گلدستہ', rate: 60, res: 'leaves' },
+    { emoji: '🌷', name: 'کرسٹل گلاب', rate: 100, res: 'leaves' },
+    { emoji: '🌈', name: 'رینبو بلوم', rate: 180, res: 'leaves' },
+    { emoji: '✨', name: 'ابدی باغ ⭐', rate: 300, res: 'leaves' },
+  ],
+  animals: [
+    { emoji: '🦊', name: 'بیبی لومڑی', rate: 2, res: 'stars' },
+    { emoji: '🐺', name: 'چھوٹی لومڑی', rate: 5, res: 'stars' },
+    { emoji: '🦁', name: 'کھیلتی لومڑی', rate: 10, res: 'stars' },
+    { emoji: '🐯', name: 'جنگل لومڑی', rate: 18, res: 'stars' },
+    { emoji: '🦅', name: 'جادوئی لومڑی', rate: 30, res: 'stars' },
+    { emoji: '🦋', name: 'روح لومڑی', rate: 50, res: 'stars' },
+    { emoji: '🐉', name: 'کرسٹل لومڑی', rate: 80, res: 'stars' },
+    { emoji: '🌙', name: 'لونا فاکس ⭐', rate: 150, res: 'stars' },
+  ],
+  buildings: [
+    { emoji: '🏠', name: 'چھوٹی کٹیا', rate: 5, res: 'coins' },
+    { emoji: '🏡', name: 'آرام دہ کیبن', rate: 12, res: 'coins' },
+    { emoji: '🏘️', name: 'جنگل گھر', rate: 25, res: 'coins' },
+    { emoji: '🏰', name: 'جادوئی گھر', rate: 45, res: 'coins' },
+    { emoji: '🗼', name: 'مسحور ولا', rate: 80, res: 'coins' },
+    { emoji: '🌟', name: 'کرسٹل محل ⭐', rate: 150, res: 'coins' },
+  ],
+  tools: [
+    { emoji: '🪣', name: 'لکڑی کا ڈبہ', rate: 0, res: 'leaves' },
+    { emoji: '🫗', name: 'چاندی کا ڈبہ', rate: 0, res: 'leaves' },
+    { emoji: '🏺', name: 'سونے کا ڈبہ', rate: 0, res: 'leaves' },
+    { emoji: '✨', name: 'جادوئی ڈبہ ⭐', rate: 0, res: 'leaves' },
+  ],
+  decorations: [
+    { emoji: '🍄', name: 'چھوٹا مشروم', rate: 0, res: 'leaves' },
+    { emoji: '💫', name: 'چمکتا مشروم', rate: 0, res: 'leaves' },
+    { emoji: '🏮', name: 'پری لیمپ', rate: 0, res: 'leaves' },
+    { emoji: '💎', name: 'کرسٹل پتھر', rate: 0, res: 'leaves' },
+    { emoji: '⛲', name: 'جادوئی فوارہ', rate: 0, res: 'leaves' },
+    { emoji: '🌉', name: 'ستاروں کا پل', rate: 0, res: 'leaves' },
+    { emoji: '🌈', name: 'رینبو گیٹ ⭐', rate: 0, res: 'leaves' },
+  ]
+};
+
+const QUESTS = [
+  { id: 1, text: 'پہلا Merge کریں', target: 1, type: 'merges', reward: { coins: 50 }, done: false },
+  { id: 2, text: '5 Merge کریں', target: 5, type: 'merges', reward: { coins: 100 }, done: false },
+  { id: 3, text: '10 Merge کریں', target: 10, type: 'merges', reward: { gems: 2 }, done: false },
+  { id: 4, text: '100 پتے جمع کریں', target: 100, type: 'leaves', reward: { coins: 200 }, done: false },
+  { id: 5, text: '50 ستارے جمع کریں', target: 50, type: 'stars', reward: { gems: 3 }, done: false },
+  { id: 6, text: '25 Merge کریں', target: 25, type: 'merges', reward: { coins: 500, gems: 5 }, done: false },
+];
+
+// ============================================================
+// GAME STATE
+// ============================================================
+let state = {
+  coins: 100, gems: 5, leaves: 0, stars: 0,
+  mergeCount: 0, playerLevel: 1, xp: 0,
+  board: Array(30).fill(null),
+  selectedCell: null,
+  idleAccum: { leaves: 0, stars: 0, coins: 0 },
+  dailyClaimed: false,
+  quests: JSON.parse(JSON.stringify(QUESTS)),
+  lastSave: Date.now()
+};
+
+// ============================================================
+// PARTICLES
+// ============================================================
+function initParticles() {
+  const emojis = ['✨', '🌟', '⭐', '🍃', '🌸', '💫', '🌿', '🦋'];
+  const container = document.getElementById('particles');
+  for (let i = 0; i < 12; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    p.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+    p.style.left = Math.random() * 100 + 'vw';
+    p.style.animationDelay = Math.random() * 6 + 's';
+    p.style.animationDuration = (4 + Math.random() * 4) + 's';
+    p.style.fontSize = (14 + Math.random() * 16) + 'px';
+    container.appendChild(p);
+  }
+}
+
+// ============================================================
+// INIT BOARD
+// ============================================================
+function initBoard() {
+  // Give 3 starting seeds
+  state.board[0] = { chain: 'plants', level: 0 };
+  state.board[1] = { chain: 'plants', level: 0 };
+  state.board[5] = { chain: 'animals', level: 0 };
+  renderBoard();
+}
+
+function renderBoard() {
+  const board = document.getElementById('merge-board');
+  board.innerHTML = '';
+  for (let i = 0; i < 30; i++) {
+    const cell = document.createElement('div');
+    cell.className = 'cell';
+    cell.dataset.index = i;
+    if (state.selectedCell === i) cell.classList.add('selected');
+    if (state.board[i]) {
+      const item = state.board[i];
+      const chainData = CHAINS[item.chain][item.level];
+      const rateText = chainData.rate > 0 ? `+${chainData.rate}/min` : '';
+      cell.innerHTML = `
+        <div class="item">
+          <span class="item-emoji">${chainData.emoji}</span>
+          <span class="item-level">Lv${item.level + 1}</span>
+          ${rateText ? `<span class="item-rate">${rateText}</span>` : ''}
+        </div>`;
+    }
+    cell.addEventListener('click', () => handleCellClick(i));
+    board.appendChild(cell);
+  }
+  updateStats();
+}
+
+// ============================================================
+// CELL CLICK / MERGE LOGIC
+// ============================================================
+function handleCellClick(index) {
+  if (state.selectedCell === null) {
+    if (state.board[index]) {
+      state.selectedCell = index;
+      renderBoard();
+    } else {
+      // Empty cell - deselect
+    }
+  } else {
+    if (state.selectedCell === index) {
+      state.selectedCell = null;
+      renderBoard();
+      return;
+    }
+    const from = state.board[state.selectedCell];
+    const to = state.board[index];
+    if (to === null) {
+      // Move item
+      state.board[index] = from;
+      state.board[state.selectedCell] = null;
+      state.selectedCell = null;
+      renderBoard();
+    } else if (from && to && from.chain === to.chain && from.level === to.level) {
+      // MERGE!
+      const chain = from.chain;
+      const nextLevel = from.level + 1;
+      if (nextLevel < CHAINS[chain].length) {
+        doMerge(state.selectedCell, index, chain, nextLevel);
+      } else {
+        showToast('✨ یہ پہلے سے سب سے اعلیٰ Level ہے!');
+        state.selectedCell = null;
+        renderBoard();
+      }
+    } else {
+      state.selectedCell = index;
+      renderBoard();
+    }
+  }
+}
+
+function doMerge(fromIdx, toIdx, chain, nextLevel) {
+  const newItem = { chain, level: nextLevel };
+  state.board[fromIdx] = null;
+  state.board[toIdx] = newItem;
+  state.mergeCount++;
+  state.xp += 10;
+
+  // Sparkle effect
+  createSparkle(toIdx);
+
+  // Rewards
+  const reward = { coins: nextLevel * 5, leaves: nextLevel * 2, stars: nextLevel };
+  state.coins += reward.coins;
+  state.leaves += reward.leaves;
+  state.stars += reward.stars;
+
+  // Check level up
+  const xpNeeded = state.playerLevel * 100;
+  if (state.xp >= xpNeeded) {
+    state.playerLevel++;
+    state.xp = 0;
+    showLevelUp();
+  }
+
+  const chainInfo = CHAINS[chain][nextLevel];
+  const mergeModal = document.getElementById('merge-modal');
+
+  // Only show modal for rare merges (level 5+)
+  if (nextLevel >= 4) {
+    document.getElementById('merge-title').textContent = `🎉 ${chainInfo.emoji} ${chainInfo.name}!`;
+    document.getElementById('merge-body').innerHTML = `
+      <p>شاندار! آپ نے <strong style="color:#FFD700">${chainInfo.name}</strong> بنایا!</p>
+      <p>انعام: +${reward.coins}🪙 +${reward.leaves}🍃 +${reward.stars}⭐</p>`;
+    mergeModal.classList.add('show');
+  } else {
+    showToast(`✨ ${chainInfo.emoji} ${chainInfo.name} بنایا! +${reward.coins}🪙`);
+  }
+
+  state.selectedCell = null;
+  updateQuests();
+  renderBoard();
+  saveGame();
+}
+
+function createSparkle(cellIdx) {
+  const board = document.getElementById('merge-board');
+  const cells = board.querySelectorAll('.cell');
+  if (!cells[cellIdx]) return;
+  const rect = cells[cellIdx].getBoundingClientRect();
+  const sparks = ['✨', '⭐', '💫', '🌟', '🎉'];
+  for (let i = 0; i < 5; i++) {
+    const s = document.createElement('div');
+    s.className = 'sparkle';
+    s.textContent = sparks[Math.floor(Math.random() * sparks.length)];
+    s.style.left = (rect.left + Math.random() * rect.width) + 'px';
+    s.style.top = (rect.top + Math.random() * rect.height) + 'px';
+    s.style.animationDelay = (Math.random() * 0.3) + 's';
+    document.body.appendChild(s);
+    setTimeout(() => s.remove(), 1000);
+  }
+}
+
+// ============================================================
+// IDLE SYSTEM
+// ============================================================
+function startIdleSystem() {
+  setInterval(() => {
+    let totalLeaves = 0, totalStars = 0, totalCoins = 0;
+    state.board.forEach(item => {
+      if (!item) return;
+      const chainData = CHAINS[item.chain][item.level];
+      if (chainData.res === 'leaves') totalLeaves += chainData.rate / 60;
+      if (chainData.res === 'stars') totalStars += chainData.rate / 60;
+      if (chainData.res === 'coins') totalCoins += chainData.rate / 60;
+    });
+    state.idleAccum.leaves += totalLeaves;
+    state.idleAccum.stars += totalStars;
+    state.idleAccum.coins += totalCoins;
+
+    // Update collect button
+    const total = Math.floor(state.idleAccum.leaves + state.idleAccum.stars + state.idleAccum.coins);
+    if (total > 0) {
+      const btn = document.getElementById('collect-btn');
+      btn.classList.add('show');
+      document.getElementById('collect-amount').textContent = `+${total}`;
+    }
+    updateStats();
+  }, 1000);
+}
+
+function collectIdle() {
+  const l = Math.floor(state.idleAccum.leaves);
+  const s = Math.floor(state.idleAccum.stars);
+  const c = Math.floor(state.idleAccum.coins);
+  if (l + s + c === 0) { showToast('⏰ ابھی کچھ نہیں! تھوڑا انتظار کریں'); return; }
+  state.leaves += l; state.stars += s; state.coins += c;
+  state.idleAccum = { leaves: 0, stars: 0, coins: 0 };
+  document.getElementById('collect-btn').classList.remove('show');
+  showToast(`💰 +${l}🍃 +${s}⭐ +${c}🪙 اکٹھا کیا!`);
+  updateStats();
+  updateQuests();
+  saveGame();
+}
+
+// ============================================================
+// ADD SEED
+// ============================================================
+function addSeed() {
+  if (state.coins < 10) { showToast('❌ کافی سکے نہیں! 10 🪙 چاہیے'); return; }
+  const emptyIdx = state.board.findIndex(c => c === null);
+  if (emptyIdx === -1) { showToast('❌ Board بھرا ہوا ہے! پہلے Merge کریں'); return; }
+  state.coins -= 10;
+  state.board[emptyIdx] = { chain: 'plants', level: 0 };
+  showToast('🌱 نیا بیج لگایا! 10🪙 خرچ ہوئے');
+  renderBoard();
+  saveGame();
+}
+
+// ============================================================
+// SHOP
+// ============================================================
+function buyItem(type, cost) {
+  const isGem = ['energy'].includes(type);
+  const currency = isGem ? 'gems' : 'coins';
+  if (state[currency] < cost) {
+    showToast(`❌ کافی ${isGem ? 'جواہر' : 'سکے'} نہیں!`);
+    return;
+  }
+  const emptyIdx = state.board.findIndex(c => c === null);
+  if (emptyIdx === -1) { showToast('❌ Board بھرا ہوا ہے!'); return; }
+  state[currency] -= cost;
+
+  const itemMap = {
+    seed: { chain: 'plants', level: 0 },
+    flower: { chain: 'plants', level: 4 },
+    fox: { chain: 'animals', level: 0 },
+    hut: { chain: 'buildings', level: 0 },
+    mushroom: { chain: 'decorations', level: 0 },
+  };
+  if (type === 'energy') {
+    state.idleAccum.leaves += 50; state.idleAccum.coins += 50;
+    showToast('⚡ انرجی ملی! 50🍃 +50🪙 تیار!');
+    updateStats(); closeModal('shop-modal'); return;
+  }
+  state.board[emptyIdx] = itemMap[type];
+  showToast(`✅ خریداری کامیاب!`);
+  renderBoard();
+  closeModal('shop-modal');
+  saveGame();
+}
+
+// ============================================================
+// DAILY REWARD
+// ============================================================
+function openDaily() {
+  document.getElementById('daily-modal').classList.add('show');
+}
+function claimDaily() {
+  if (state.dailyClaimed) { showToast('✅ آج کا انعام پہلے ہی مل گیا!'); closeModal('daily-modal'); return; }
+  state.coins += 100; state.gems += 5; state.stars += 20;
+  state.dailyClaimed = true;
+  showToast('🎁 انعام ملا! +100🪙 +5💎 +20⭐');
+  updateStats(); closeModal('daily-modal');
+  setTimeout(() => { state.dailyClaimed = false; }, 86400000);
+  saveGame();
+}
+
+// ============================================================
+// QUESTS
+// ============================================================
+function updateQuests() {
+  state.quests.forEach(q => {
+    if (q.done) return;
+    let val = 0;
+    if (q.type === 'merges') val = state.mergeCount;
+    if (q.type === 'leaves') val = state.leaves;
+    if (q.type === 'stars') val = state.stars;
+    if (val >= q.target) {
+      q.done = true;
+      if (q.reward.coins) state.coins += q.reward.coins;
+      if (q.reward.gems) state.gems += q.reward.gems;
+      showToast(`🏆 مہم مکمل: ${q.text}! +${q.reward.coins || ''}🪙 ${q.reward.gems ? '+'+q.reward.gems+'💎' : ''}`);
+    }
+  });
+  // Update current quest display
+  const current = state.quests.find(q => !q.done);
+  if (current) {
+    let val = 0;
+    if (current.type === 'merges') val = state.mergeCount;
+    if (current.type === 'leaves') val = state.leaves;
+    if (current.type === 'stars') val = state.stars;
+    document.getElementById('quest-text').textContent = current.text;
+    document.getElementById('quest-progress').textContent = `${Math.min(val, current.target)}/${current.target}`;
+  } else {
+    document.getElementById('quest-text').textContent = '🌟 تمام مہمات مکمل!';
+    document.getElementById('quest-progress').textContent = '✅';
+  }
+  updateStats();
+}
+
+function openQuests() {
+  const list = document.getElementById('quest-list');
+  list.innerHTML = state.quests.map(q => {
+    let val = 0;
+    if (q.type === 'merges') val = state.mergeCount;
+    if (q.type === 'leaves') val = state.leaves;
+    if (q.type === 'stars') val = state.stars;
+    const pct = Math.min(100, (val / q.target) * 100);
+    return `<div style="background:rgba(255,255,255,0.1);border-radius:10px;padding:10px;margin:5px 0;text-align:left;">
+      <div style="color:white;font-weight:700;font-size:13px;">${q.done ? '✅' : '🎯'} ${q.text}</div>
+      <div style="background:rgba(0,0,0,0.2);border-radius:5px;height:6px;margin:5px 0;">
+        <div style="background:#FFD700;height:100%;border-radius:5px;width:${pct}%;transition:width 0.5s;"></div>
+      </div>
+      <div style="color:#FFD700;font-size:11px;">انعام: ${q.reward.coins ? '+'+q.reward.coins+'🪙' : ''} ${q.reward.gems ? '+'+q.reward.gems+'💎' : ''}</div>
+    </div>`;
+  }).join('');
+  document.getElementById('quest-modal').classList.add('show');
+}
+
+// ============================================================
+// LEVEL UP
+// ============================================================
+function showLevelUp() {
+  const banner = document.getElementById('level-banner');
+  document.getElementById('banner-text').textContent = `Level ${state.playerLevel} حاصل کیا! 🌟`;
+  banner.classList.add('show');
+  state.gems += 2;
+  showToast(`🎉 Level Up! Level ${state.playerLevel}! +2💎`);
+  setTimeout(() => banner.classList.remove('show'), 2500);
+}
+
+// ============================================================
+// UI HELPERS
+// ============================================================
+function updateStats() {
+  document.getElementById('coins-val').textContent = Math.floor(state.coins);
+  document.getElementById('gems-val').textContent = Math.floor(state.gems);
+  document.getElementById('leaves-val').textContent = Math.floor(state.leaves);
+  document.getElementById('stars-val').textContent = Math.floor(state.stars);
+  document.getElementById('player-level').textContent = state.playerLevel;
+  document.getElementById('merge-count').textContent = state.mergeCount;
+
+  // Idle rate display
+  let totalRate = 0;
+  state.board.forEach(item => {
+    if (!item) return;
+    const d = CHAINS[item.chain][item.level];
+    totalRate += d.rate;
+  });
+  document.getElementById('offline-info').textContent = totalRate > 0 ? `⚡ ${totalRate}/min کما رہے ہیں` : '⏰ Items رکھیں!';
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('show');
+}
+
+function showToast(msg) {
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 2200);
+}
+
+// ============================================================
+// SAVE / LOAD
+// ============================================================
+function saveGame() {
+  try { localStorage.setItem('whisperGrove', JSON.stringify(state)); } catch(e) {}
+}
+
+function loadGame() {
+  try {
+    const saved = localStorage.getItem('whisperGrove');
+    if (saved) {
+      const s = JSON.parse(saved);
+      // Offline bonus calculation
+      const offlineMs = Date.now() - (s.lastSave || Date.now());
+      const offlineMins = Math.min(offlineMs / 60000, 480); // Max 8 hours
+      let bonusLeaves = 0, bonusStars = 0, bonusCoins = 0;
+      (s.board || []).forEach(item => {
+        if (!item) return;
+        const d = CHAINS[item.chain]?.[item.level];
+        if (!d) return;
+        if (d.res === 'leaves') bonusLeaves += d.rate * offlineMins;
+        if (d.res === 'stars') bonusStars += d.rate * offlineMins;
+        if (d.res === 'coins') bonusCoins += d.rate * offlineMins;
+      });
+      Object.assign(state, s);
+      state.lastSave = Date.now();
+      if (bonusLeaves + bonusStars + bonusCoins > 0) {
+        state.leaves += bonusLeaves; state.stars += bonusStars; state.coins += bonusCoins;
+        setTimeout(() => {
+          showToast(`🌙 Offline Bonus: +${Math.floor(bonusLeaves)}🍃 +${Math.floor(bonusStars)}⭐ +${Math.floor(bonusCoins)}🪙`);
+        }, 2000);
+      }
+    }
+  } catch(e) {}
+}
+
+function openShop() { document.getElementById('shop-modal').classList.add('show'); }
+
+// ============================================================
+// START GAME
+// ============================================================
+function startGame() {
+  document.getElementById('splash').classList.remove('active');
+  document.getElementById('game').classList.add('active');
+  loadGame();
+  if (!state.board.some(b => b !== null)) initBoard();
+  renderBoard();
+  startIdleSystem();
+  updateQuests();
+  // Auto-save every 30s
+  setInterval(saveGame, 30000);
+}
+
+// ============================================================
+// INIT
+// ============================================================
+initParticles();
+</script>
+</body>
+</html>
